@@ -1,8 +1,8 @@
 resource "aws_s3_bucket" "state_file_bucket" {
-    bucket = "talent-academy-sathyaraj-lab-tfstates"
+    bucket = "talent-academy-sathyaraj-lab-tfstates-sep"
 
     tags = {
-        Name = "talent-academy-sathyaraj-lab-tfstates"
+        Name = "talent-academy-sathyaraj-lab-tfstates-sep"
         Environment = "Lab"
     }
 
@@ -18,6 +18,27 @@ resource "aws_s3_bucket_versioning" "version_my_bucket" {
       status = "Enabled"
     }
   
+}
+
+resource "aws_kms_key" "be_kms" {
+  description             = "backend-kms"
+  #deletion_window_in_days = 10
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "backend_encryption" {
+  bucket = aws_s3_bucket.state_file_bucket.id
+    rule {
+      apply_server_side_encryption_by_default {
+        kms_master_key_id = aws_kms_key.be_kms.arn
+        #sse_algorithm     = "AES256"
+        sse_algorithm     = "aws:kms"
+      }
+    }
+  }
+
+resource "aws_kms_alias" "be_kms_alias" {
+  name          = "alias/backendkms"
+  target_key_id = aws_kms_key.be_kms.key_id
 }
 
 resource "aws_dynamodb_table" "terraform_lock_tbl" {
